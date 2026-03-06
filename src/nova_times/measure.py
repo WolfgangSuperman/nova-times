@@ -121,8 +121,44 @@ def gradient_boosting_regressor(mags: NDArray, jds: NDArray, band: str) -> Timin
 
     return results
 
+def interpolation(mags: NDArray, jds: NDArray, band: str) -> TimingData:
+
+    maximum_mag = min(mags)
+    maximum_indx = np.argmin(mags)
+    maximum_jd = jds[maximum_indx]
+
+    jds = jds[~np.isnan(mags)]
+    mags = mags[~np.isnan(mags)]
+
+    jds = jds[np.argmin(mags) :]
+    mags = mags[np.argmin(mags) :]
+
+    # Instead of using all data for JDs, use arange over observed min/max
+    # 1-hour resolution = 1/24.
+    jds_all: NDArray = np.arange(np.min(jds), np.max(jds), 1 / 24.0)
+    # jds_all = np.array(alldata['JD'][alldata['JD']<max(jds)])
+    # jds_all = np.asarray(sorted(jds_all[np.argmin(mags):]))
+   # jds_all = jds_all.reshape(-1, 1)
+
+    fit = np.interp(jds_all, jds, mags)
+
+    t2_indx = np.argmin(np.abs(fit - (mags.min() + 2)))
+    t2_mag = fit[t2_indx]
+    t2_jd = jds_all[t2_indx][0]
+
+    results = TimingData(
+        band=band,
+        algorithm="interpolation",
+        maximum_jd=maximum_jd,
+        maximum_mag=maximum_mag,
+        t2_mag=t2_mag,
+        t2_jd=t2_jd,
+    )
+
+    return results
 
 ALGORITHM_FUNCTIONS = {
     "nearest_point": nearest_point,
     "gradient_boosting_regressor": gradient_boosting_regressor,
+    "interpolation": interpolation
 }

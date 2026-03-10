@@ -159,6 +159,6 @@ def interpolation(mags: NDArray, jds: NDArray, band: str) -> TimingData:
 
 ALGORITHM_FUNCTIONS = {
     "nearest_point": nearest_point,
-    "gradient_boosting_regressor": gradient_boosting_regressor,
+    "GBM": gradient_boosting_regressor,
     "interpolation": interpolation
 }

@@ -22,13 +22,15 @@ TimingData = TypedDict(
 
 
 def measure_time(
-    dataset: Table, band: Optional[str] = None, algorithm: Optional[str] = None
+    dataset: Table, band: Optional[str] = None, algorithm: Optional[str] = None, N: Optional[float] = None
 ) -> TimingData:
     MINIMUM_NUM_DATA = 10
     if band is None:
         band = "V"
     if algorithm is None:
         algorithm = "nearest_point"
+    if N is None:
+        N = 2.
 
     mask = dataset.groups.keys["Band"] == band
     singleband_data = dataset.groups[mask]
@@ -42,7 +44,7 @@ def measure_time(
 
     algorithm_func = ALGORITHM_FUNCTIONS[algorithm]
 
-    return algorithm_func(magnitudes, jds, band)
+    return algorithm_func(magnitudes, jds, band, N)
 
 
 def nearest_point(mags: NDArray, jds: NDArray, band: str) -> TimingData:
@@ -112,7 +114,7 @@ def gradient_boosting_regressor(mags: NDArray, jds: NDArray, band: str) -> Timin
 
     results = TimingData(
         band=band,
-        algorithm="gradient_boosting_regressor",
+        algorithm="GBM",
         maximum_jd=maximum_jd,
         maximum_mag=maximum_mag,
         t2_mag=t2_mag,
@@ -121,7 +123,7 @@ def gradient_boosting_regressor(mags: NDArray, jds: NDArray, band: str) -> Timin
 
     return results
 
-def interpolation(mags: NDArray, jds: NDArray, band: str) -> TimingData:
+def interpolation(mags: NDArray, jds: NDArray, band: str, N: float) -> TimingData:
 
     maximum_mag = min(mags)
     maximum_indx = np.argmin(mags)
@@ -142,17 +144,18 @@ def interpolation(mags: NDArray, jds: NDArray, band: str) -> TimingData:
 
     fit = np.interp(jds_all, jds, mags)
 
-    t2_indx = np.argmin(np.abs(fit - (mags.min() + 2)))
-    t2_mag = fit[t2_indx]
-    t2_jd = jds_all[t2_indx][0]
+    tN_indx = np.argmin(np.abs(fit - (mags.min() + N)))
+    tN_mag = fit[tN_indx]
+    tN_jd = jds_all[tN_indx]
 
     results = TimingData(
         band=band,
         algorithm="interpolation",
         maximum_jd=maximum_jd,
         maximum_mag=maximum_mag,
-        t2_mag=t2_mag,
-        t2_jd=t2_jd,
+        N = str(N),
+        tN_mag=tN_mag,
+        tN_jd=tN_jd,
     )
 
     return results

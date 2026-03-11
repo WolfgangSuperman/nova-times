@@ -15,20 +15,23 @@ TimingData = TypedDict(
         "algorithm": str,
         "maximum_jd": float,
         "maximum_mag": float,
-        "t2_mag": float,
-        "t2_jd": float,
+        "N": float,
+        "tN_mag": float,
+        "tN_jd": float,
     },
 )
 
 
 def measure_time(
-    dataset: Table, band: Optional[str] = None, algorithm: Optional[str] = None
+    dataset: Table, band: Optional[str] = None, algorithm: Optional[str] = None, N: Optional[float] = None
 ) -> TimingData:
     MINIMUM_NUM_DATA = 10
     if band is None:
         band = "V"
     if algorithm is None:
         algorithm = "nearest_point"
+    if N is None:
+        N = 2.
 
     mask = dataset.groups.keys["Band"] == band
     singleband_data = dataset.groups[mask]
@@ -42,13 +45,13 @@ def measure_time(
 
     algorithm_func = ALGORITHM_FUNCTIONS[algorithm]
 
-    return algorithm_func(magnitudes, jds, band)
+    return algorithm_func(magnitudes, jds, band, N)
 
 
-def nearest_point(mags: NDArray, jds: NDArray, band: str) -> TimingData:
+def nearest_point(mags: NDArray, jds: NDArray, band: str, N: float) -> TimingData:
     """
     Finds observed maximum brightness.
-    Finds observation closest to T2.
+    Finds observation closest to 'TN'.
     Returns Magnitude and JD of each.
     """
     # maximum
@@ -56,24 +59,25 @@ def nearest_point(mags: NDArray, jds: NDArray, band: str) -> TimingData:
     maximum_indx = np.argmin(mags)
     maximum_jd = jds[maximum_indx]
 
-    # T2
-    t2_mag_calc = maximum_mag + 2
-    t2_indx = np.argmin(np.abs(mags - t2_mag_calc))
-    t2_mag = mags[t2_indx]
-    t2_jd = jds[t2_indx]
+    # TN
+    tN_mag_calc = maximum_mag + N
+    tN_indx = np.argmin(np.abs(mags - tN_mag_calc))
+    tN_mag = mags[tN_indx]
+    tN_jd = jds[tN_indx]
 
     results = TimingData(
         band=band,
         algorithm="nearest_point",
         maximum_jd=maximum_jd,
         maximum_mag=maximum_mag,
-        t2_mag=t2_mag,
-        t2_jd=t2_jd,
+        N = str(N),
+        tN_mag=tN_mag,
+        tN_jd=tN_jd,
     )
     return results
 
 
-def gradient_boosting_regressor(mags: NDArray, jds: NDArray, band: str) -> TimingData:
+def gradient_boosting_regressor(mags: NDArray, jds: NDArray, band: str, N: float) -> TimingData:
 
     maximum_mag = min(mags)
     maximum_indx = np.argmin(mags)
@@ -106,22 +110,23 @@ def gradient_boosting_regressor(mags: NDArray, jds: NDArray, band: str) -> Timin
 
     fit = gbm.predict(jds_all)
 
-    t2_indx = np.argmin(np.abs(fit - (mags.min() + 2)))
-    t2_mag = fit[t2_indx]
-    t2_jd = jds_all[t2_indx][0]
+    tN_indx = np.argmin(np.abs(fit - (mags.min() + N)))
+    tN_mag = fit[tN_indx]
+    tN_jd = jds_all[tN_indx][0]
 
     results = TimingData(
         band=band,
-        algorithm="gradient_boosting_regressor",
+        algorithm="GBM",
         maximum_jd=maximum_jd,
         maximum_mag=maximum_mag,
-        t2_mag=t2_mag,
-        t2_jd=t2_jd,
+        N = str(N),
+        tN_mag=tN_mag,
+        tN_jd=tN_jd,
     )
 
     return results
 
-def interpolation(mags: NDArray, jds: NDArray, band: str) -> TimingData:
+def interpolation(mags: NDArray, jds: NDArray, band: str, N: float) -> TimingData:
 
     maximum_mag = min(mags)
     maximum_indx = np.argmin(mags)
@@ -142,17 +147,18 @@ def interpolation(mags: NDArray, jds: NDArray, band: str) -> TimingData:
 
     fit = np.interp(jds_all, jds, mags)
 
-    t2_indx = np.argmin(np.abs(fit - (mags.min() + 2)))
-    t2_mag = fit[t2_indx]
-    t2_jd = jds_all[t2_indx][0]
+    tN_indx = np.argmin(np.abs(fit - (mags.min() + N)))
+    tN_mag = fit[tN_indx]
+    tN_jd = jds_all[tN_indx]
 
     results = TimingData(
         band=band,
         algorithm="interpolation",
         maximum_jd=maximum_jd,
         maximum_mag=maximum_mag,
-        t2_mag=t2_mag,
-        t2_jd=t2_jd,
+        N = str(N),
+        tN_mag=tN_mag,
+        tN_jd=tN_jd,
     )
 
     return results

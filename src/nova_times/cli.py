@@ -54,19 +54,21 @@ def viz(filename: str, output_filename: str, band: Optional[str] = None) -> None
 @click.argument("filename", required=True)
 # @click.argument("output_filename", required=True)
 @click.option("-b", "--band", "band")
+@click.option("-N", "--n", "N",  type = float)
 @click.option(
     "--algo",
     "--algorithm",
     "algorithm",
     type=click.Choice(list(ALGORITHM_FUNCTIONS.keys())),
 )
+
 def measure(
-    filename: str, band: Optional[str] = None, algorithm: Optional[str] = None
+    filename: str, band: Optional[str] = None, algorithm: Optional[str] = None, N: Optional[float] = None
 ) -> None:
     data_table = read_file(filename)
 
     try:
-        timing_data = measure_time(data_table, band=band, algorithm=algorithm)
+        timing_data = measure_time(data_table, band=band, algorithm=algorithm, N=N)
     except MissingDataError as err:
         raise click.ClickException(str(err))
 

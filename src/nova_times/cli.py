@@ -1,10 +1,10 @@
 import json
 from typing import Optional
+from numpy.typing import NDArray
 
 import click
 import matplotlib.pyplot as plt
 from astropy.table import Table
-
 
 from nova_times.describe import describe_dataset
 from nova_times.exceptions import MissingDataError
@@ -40,12 +40,12 @@ def describe(filename: str) -> None:
 @click.argument("filename", required=True)
 @click.argument("output_filename", required=True)
 @click.option("-b", "--band", "band")
-def viz(filename: str, output_filename: str, band: Optional[str] = None) -> None:
+def viz(filename: str, output_filename: str, band: Optional[str] = None, lims: Optional[NDArray] = None) -> None:
     data_table = read_file(filename)
 
     fig, ax = plt.subplots()
 
-    viz_dataset(ax, data_table, band)
+    viz_dataset(ax, data_table, band, lims)
 
     plt.savefig(output_filename)
 
@@ -61,14 +61,18 @@ def viz(filename: str, output_filename: str, band: Optional[str] = None) -> None
     "algorithm",
     type=click.Choice(list(ALGORITHM_FUNCTIONS.keys())),
 )
+@click.option("-mp", "--plots", "make_plots")
+@click.option("-out", "--output", "output")
+@click.option("-lims", "--limits", "lims")
 
 def measure(
-    filename: str, band: Optional[str] = None, algorithm: Optional[str] = None, N: Optional[float] = None
+    filename: str, band: Optional[str] = None, algorithm: Optional[str] = None, N: Optional[float] = None, 
+    make_plots: Optional[bool] = None, lims: Optional[bool] = None, output: Optional[str] = None
 ) -> None:
     data_table = read_file(filename)
 
     try:
-        timing_data = measure_time(data_table, band=band, algorithm=algorithm, N=N)
+        timing_data = measure_time(data_table, band=band, algorithm=algorithm, N=N, make_plots=make_plots, lims=lims, output=output)
     except MissingDataError as err:
         raise click.ClickException(str(err))
 

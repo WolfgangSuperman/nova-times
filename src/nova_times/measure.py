@@ -6,7 +6,11 @@ from numpy.typing import NDArray
 from sklearn.ensemble import GradientBoostingRegressor
 
 from nova_times.exceptions import MissingDataError
+import matplotlib.pyplot as plt
 
+from nova_times.viz import viz_dataset
+
+import os
 
 TimingData = TypedDict(
     "TimingData",
@@ -23,7 +27,8 @@ TimingData = TypedDict(
 
 
 def measure_time(
-    dataset: Table, band: Optional[str] = None, algorithm: Optional[str] = None, N: Optional[float] = None
+    dataset: Table, band: Optional[str] = None, algorithm: Optional[str] = None, N: Optional[float] = None, 
+    make_plots: Optional[bool] = None, lims: Optional[bool] = None, output: Optional[str] = None
 ) -> TimingData:
     MINIMUM_NUM_DATA = 10
     if band is None:
@@ -32,6 +37,10 @@ def measure_time(
         algorithm = "nearest_point"
     if N is None:
         N = 2.
+    if make_plots is None:
+        make_plots = False
+    if lims is None:
+        lims = False
 
     mask = dataset.groups.keys["Band"] == band
     singleband_data = dataset.groups[mask]
@@ -45,10 +54,10 @@ def measure_time(
 
     algorithm_func = ALGORITHM_FUNCTIONS[algorithm]
 
-    return algorithm_func(magnitudes, jds, band, N)
+    return algorithm_func(dataset, magnitudes, jds, band, N, make_plots, lims, output)
 
 
-def nearest_point(mags: NDArray, jds: NDArray, band: str, N: float) -> TimingData:
+def nearest_point(dataset: Table, mags: NDArray, jds: NDArray, band: str, N: float, make_plots: bool, lims: bool, output: str) -> TimingData:
     """
     Finds observed maximum brightness.
     Finds observation closest to 'TN'.
@@ -58,13 +67,40 @@ def nearest_point(mags: NDArray, jds: NDArray, band: str, N: float) -> TimingDat
     maximum_mag = min(mags)
     maximum_indx = np.argmin(mags)
     maximum_jd = jds[maximum_indx]
+    
+    ds = jds[~np.isnan(mags)]
+    mags = mags[~np.isnan(mags)]
+
+    jds = jds[np.argmin(mags) :]
+    mags = mags[np.argmin(mags) :]
 
     # TN
     tN_mag_calc = maximum_mag + N
     tN_indx = np.argmin(np.abs(mags - tN_mag_calc))
-    tN_mag = mags[tN_indx]
+    tN_mag = mags[tN_indx] 
     tN_jd = jds[tN_indx]
 
+    if make_plots:
+        fig, ax = plt.subplots()
+                
+        if lims:
+            plt_lims = np.array([np.min(jds)-10, tN_jd+10])
+        else:
+            plt_lims = None
+        
+        viz_dataset(ax, dataset, band, lims = plt_lims)
+        
+        ax.axvline(tN_jd, label = 't'+str(N)+' JD', ls = '--', color = 'g')
+        ax.axhline(tN_mag, label = 't'+str(N)+' mag', ls = '--', color = 'g')
+        ax.axvline(np.min(jds), label = 'max JD', ls = '--', color = 'm')
+    
+        plt.legend()
+        cwd = os.getcwd()
+        if output is None:
+            print('please provide a filename to save your lightcurve')
+        else:
+            plt.savefig(cwd+'/'+output)
+    
     results = TimingData(
         band=band,
         algorithm="nearest_point",
@@ -77,7 +113,7 @@ def nearest_point(mags: NDArray, jds: NDArray, band: str, N: float) -> TimingDat
     return results
 
 
-def gradient_boosting_regressor(mags: NDArray, jds: NDArray, band: str, N: float) -> TimingData:
+def gradient_boosting_regressor(dataset: Table, mags: NDArray, jds: NDArray, band: str, N: float, make_plots: bool, lims: bool, output: str) -> TimingData:
 
     maximum_mag = min(mags)
     maximum_indx = np.argmin(mags)
@@ -93,8 +129,6 @@ def gradient_boosting_regressor(mags: NDArray, jds: NDArray, band: str, N: float
     # Instead of using all data for JDs, use arange over observed min/max
     # 1-hour resolution = 1/24.
     jds_all: NDArray = np.arange(np.min(jds), np.max(jds), 1 / 24.0)
-    # jds_all = np.array(alldata['JD'][alldata['JD']<max(jds)])
-    # jds_all = np.asarray(sorted(jds_all[np.argmin(mags):]))
     jds_all = jds_all.reshape(-1, 1)
 
     if len(jds) < 100:
@@ -113,7 +147,29 @@ def gradient_boosting_regressor(mags: NDArray, jds: NDArray, band: str, N: float
     tN_indx = np.argmin(np.abs(fit - (mags.min() + N)))
     tN_mag = fit[tN_indx]
     tN_jd = jds_all[tN_indx][0]
-
+    
+    if make_plots:
+        fig, ax = plt.subplots()
+                
+        if lims:
+            plt_lims = np.array([np.min(jds)-10, tN_jd+10])
+        else:
+            plt_lims = None
+        
+        viz_dataset(ax, dataset, band, lims = plt_lims)
+        
+        ax.plot(jds_all, fit, ls = '-.', color ='r', label = 'fit results', alpha = 0.7)
+        ax.axvline(tN_jd, label = 't'+str(N)+' JD', ls = '--', color = 'g')
+        ax.axhline(tN_mag, label = 't'+str(N)+' mag', ls = '--', color = 'g')
+        ax.axvline(np.min(jds), label = 'max JD', ls = '--', color = 'm')
+    
+        plt.legend()
+        cwd = os.getcwd()
+        if output is None:
+            print('please provide a filename to save your lightcurve')
+        else:
+            plt.savefig(cwd+'/'+output)
+    
     results = TimingData(
         band=band,
         algorithm="GBM",
@@ -126,12 +182,13 @@ def gradient_boosting_regressor(mags: NDArray, jds: NDArray, band: str, N: float
 
     return results
 
-def interpolation(mags: NDArray, jds: NDArray, band: str, N: float) -> TimingData:
+def interpolation(dataset: Table, mags: NDArray, jds: NDArray, band: str, N: float, make_plots: bool, lims: bool, output: str) -> TimingData:
 
     maximum_mag = min(mags)
     maximum_indx = np.argmin(mags)
     maximum_jd = jds[maximum_indx]
-
+    
+    
     jds = jds[~np.isnan(mags)]
     mags = mags[~np.isnan(mags)]
 
@@ -141,16 +198,37 @@ def interpolation(mags: NDArray, jds: NDArray, band: str, N: float) -> TimingDat
     # Instead of using all data for JDs, use arange over observed min/max
     # 1-hour resolution = 1/24.
     jds_all: NDArray = np.arange(np.min(jds), np.max(jds), 1 / 24.0)
-    # jds_all = np.array(alldata['JD'][alldata['JD']<max(jds)])
-    # jds_all = np.asarray(sorted(jds_all[np.argmin(mags):]))
-   # jds_all = jds_all.reshape(-1, 1)
-
+    
     fit = np.interp(jds_all, jds, mags)
 
     tN_indx = np.argmin(np.abs(fit - (mags.min() + N)))
     tN_mag = fit[tN_indx]
     tN_jd = jds_all[tN_indx]
-
+    
+    cwd = os.getcwd()
+        
+    if make_plots:
+        fig, ax = plt.subplots()
+                
+        if lims:
+            plt_lims = np.array([np.min(jds)-10, tN_jd+10])
+        else:
+            plt_lims = None
+        
+        viz_dataset(ax, dataset, band, lims = plt_lims)
+        
+        ax.plot(jds_all, fit, ls = '-.', color ='r', label = 'fit results', alpha = 0.7)
+        ax.axvline(tN_jd, label = 't'+str(N)+' JD', ls = '--', color = 'g')
+        ax.axhline(tN_mag, label = 't'+str(N)+' mag', ls = '--', color = 'g')
+        ax.axvline(np.min(jds), label = 'max JD', ls = '--', color = 'm')
+    
+        plt.legend()
+        cwd = os.getcwd()
+        if output is None:
+            print('please provide a filename to save your lightcurve')
+        else:
+            plt.savefig(cwd+'/'+output)
+          
     results = TimingData(
         band=band,
         algorithm="interpolation",

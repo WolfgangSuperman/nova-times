@@ -78,7 +78,7 @@ def nearest_point(
     # maximum
     maximum_mag = min(mags)
     maximum_indx = np.argmin(mags)
-    maximum_jd = jds[maximum_indx]  # this is wrong sometimes. not sure why (03/16/26)
+
 
     mags = mags[~np.isnan(mags)]
 
@@ -142,7 +142,6 @@ def gradient_boosting_regressor(
 
     maximum_mag = min(mags)
     maximum_indx = np.argmin(mags)
-    maximum_jd = jds[maximum_indx]  # this is wrong sometimes. not sure why (03/16/26)
 
     jds = jds[~np.isnan(mags)]
     mags = mags[~np.isnan(mags)]
@@ -226,7 +225,6 @@ def interpolation(
 
     maximum_mag = min(mags)
     maximum_indx = np.argmin(mags)
-    maximum_jd = jds[maximum_indx]  # this is wrong sometimes. not sure why (03/16/26)
 
     jds = jds[~np.isnan(mags)]
     mags = mags[~np.isnan(mags)]

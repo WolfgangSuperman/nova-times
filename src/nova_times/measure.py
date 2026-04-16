@@ -70,7 +70,7 @@ def nearest_point(
     N: float,
     make_plots: bool,
     lims: bool,
-    output: str,
+    output: Optional[str],
 ) -> TimingData:
     """
     Finds observed maximum brightness.
@@ -121,7 +121,7 @@ def nearest_point(
         algorithm="nearest_point",
         maximum_jd=np.min(jds),
         maximum_mag=maximum_mag,
-        N=str(N),
+        N=N,
         tN_mag=tN_mag,
         tN_jd=tN_jd,
     )
@@ -136,7 +136,7 @@ def gradient_boosting_regressor(
     N: float,
     make_plots: bool,
     lims: bool,
-    output: str,
+    output: Optional[str],
 ) -> TimingData:
 
     maximum_mag = min(mags)
@@ -203,7 +203,7 @@ def gradient_boosting_regressor(
         algorithm="GBM",
         maximum_jd=np.min(jds),
         maximum_mag=maximum_mag,
-        N=str(N),
+        N=N,
         tN_mag=tN_mag,
         tN_jd=tN_jd,
     )
@@ -219,7 +219,7 @@ def interpolation(
     N: float,
     make_plots: bool,
     lims: bool,
-    output: str,
+    output: Optional[str],
 ) -> TimingData:
 
     maximum_mag = min(mags)
@@ -275,7 +275,7 @@ def interpolation(
         algorithm="interpolation",
         maximum_jd=np.min(jds),
         maximum_mag=maximum_mag,
-        N=str(N),
+        N=N,
         tN_mag=tN_mag,
         tN_jd=tN_jd,
     )

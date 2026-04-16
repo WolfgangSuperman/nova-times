@@ -78,7 +78,6 @@ def nearest_point(
     # maximum
     maximum_mag = min(mags)
     mags = mags[~np.isnan(mags)]
-            
     jds = jds[np.argmin(mags):]
     mags = mags[np.argmin(mags):]
 

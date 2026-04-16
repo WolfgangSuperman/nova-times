@@ -41,10 +41,11 @@ def describe(filename: str) -> None:
 @click.argument("output_filename", required=True)
 @click.option("-b", "--band", "band")
 def viz(
-        filename: str,
-        output_filename: str,
-        band: Optional[str] = None,
-        lims: Optional[NDArray] = None) -> None:
+    filename: str,
+    output_filename: str,
+    band: Optional[str] = None,
+    lims: Optional[NDArray] = None,
+) -> None:
     data_table = read_file(filename)
 
     fig, ax = plt.subplots()
@@ -69,13 +70,14 @@ def viz(
 @click.option("-out", "--output", "output")
 @click.option("-lims", "--limits", "lims")
 def measure(
-        filename: str,
-        band: Optional[str] = None,
-        algorithm: Optional[str] = None,
-        N: Optional[float] = None,
-        make_plots: Optional[bool] = None,
-        lims: Optional[bool] = None,
-        output: Optional[str] = None) -> None:
+    filename: str,
+    band: Optional[str] = None,
+    algorithm: Optional[str] = None,
+    N: Optional[float] = None,
+    make_plots: Optional[bool] = None,
+    lims: Optional[bool] = None,
+    output: Optional[str] = None,
+) -> None:
     data_table = read_file(filename)
 
     try:
@@ -86,7 +88,8 @@ def measure(
             N=N,
             make_plots=make_plots,
             lims=lims,
-            output=output)
+            output=output,
+        )
     except MissingDataError as err:
         raise click.ClickException(str(err))
 

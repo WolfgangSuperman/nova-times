@@ -11,14 +11,15 @@ from matplotlib.lines import Line2D
 
 
 def viz_dataset(
-        ax: Axes,
-        data_table: Table,
-        band: Optional[str] = None,
-        lims: Optional[NDArray] = None) -> None:
+    ax: Axes,
+    data_table: Table,
+    band: Optional[str] = None,
+    lims: Optional[NDArray] = None,
+) -> None:
 
     marker_keys = list(Line2D.markers.keys())  # matplotlib markers
 
-    names = list(unique(data_table, keys=['Star Name'])['Star Name'])
+    names = list(unique(data_table, keys=["Star Name"])["Star Name"])
     clean_names = [str(name) for name in names]  # star names in table for title
 
     for marker_indx, group in enumerate(data_table.groups):

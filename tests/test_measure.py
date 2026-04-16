@@ -49,10 +49,10 @@ class TestNearestPoint:
 
     def test_t2_mag(self, test_dataset):
         result = measure_time(test_dataset)
-        assert result["t2_mag"] == 11.462
+        assert result["tN_mag"] == 11.462
         assert isinstance(result["maximum_mag"], float)
 
     def test_t2_jd(self, test_dataset):
         result = measure_time(test_dataset)
-        assert result["t2_jd"] == 2460573.96765
+        assert result["tN_jd"] == 2460573.96765
         assert isinstance(result["maximum_jd"], float)

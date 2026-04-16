@@ -77,11 +77,8 @@ def nearest_point(
     """
     # maximum
     maximum_mag = min(mags)
-    maximum_indx = np.argmin(mags)
-
-
     mags = mags[~np.isnan(mags)]
-
+            
     jds = jds[np.argmin(mags):]
     mags = mags[np.argmin(mags):]
 
@@ -141,7 +138,6 @@ def gradient_boosting_regressor(
         output: str) -> TimingData:
 
     maximum_mag = min(mags)
-    maximum_indx = np.argmin(mags)
 
     jds = jds[~np.isnan(mags)]
     mags = mags[~np.isnan(mags)]
@@ -224,7 +220,6 @@ def interpolation(
         output: str) -> TimingData:
 
     maximum_mag = min(mags)
-    maximum_indx = np.argmin(mags)
 
     jds = jds[~np.isnan(mags)]
     mags = mags[~np.isnan(mags)]

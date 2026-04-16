@@ -68,7 +68,7 @@ def nearest_point(dataset: Table, mags: NDArray, jds: NDArray, band: str, N: flo
     maximum_indx = np.argmin(mags)
     maximum_jd = jds[maximum_indx]
     
-    _ds = jds[~np.isnan(mags)]
+    #_ds = jds[~np.isnan(mags)]
     mags = mags[~np.isnan(mags)]
 
     jds = jds[np.argmin(mags) :]

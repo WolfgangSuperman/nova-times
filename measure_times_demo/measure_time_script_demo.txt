@@ -1,4 +1,0 @@
-nova-times measure aavsodata_V1324_SCO.csv > output_V1324_SCO.json 
-nova-times measure aavsodata_V5855_SGR.csv > output_V5855_SGR.json
-nova-times measure aavsodata_V1716_SCO.csv > output_V1716_SCO.json
-nova-times measure aavsodata_V1723_SCO.csv > output_V1723_SCO.json

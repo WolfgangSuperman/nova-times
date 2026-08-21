@@ -1,4 +1,4 @@
-from typing import Optional, TypedDict
+from typing import Optional, TypedDict, cast
 
 import numpy as np
 from astropy.table import Table
@@ -77,6 +77,7 @@ def nearest_point(
     N: float,
     make_plots: bool,
     lims: bool,
+    linear: bool,
     output: Optional[str],
 ) -> TimingData:
     """
@@ -143,6 +144,7 @@ def gradient_boosting_regressor(
     N: float,
     make_plots: bool,
     lims: bool,
+    linear: bool,
     output: Optional[str],
 ) -> TimingData:
 
@@ -253,12 +255,10 @@ def interpolation(
         fit = UnivariateSpline(jds, mags, k=5, s=len(jds) * 0.1)
         # fit = UnivariateSpline(jds, mags, k=5)
 
-        mags_fit = fit(jds_all)
+        mags_fit = cast(NDArray, fit(jds_all))
         tN_indx = np.argmin(np.abs(mags_fit - (mags.min() + N)))
         tN_mag = mags_fit[tN_indx]
         tN_jd = jds_all[tN_indx]
-
-    cwd = os.getcwd()
 
     if make_plots:
         fig, ax = plt.subplots()

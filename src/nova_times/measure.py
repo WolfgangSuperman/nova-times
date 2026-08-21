@@ -64,7 +64,9 @@ def measure_time(
 
     algorithm_func = ALGORITHM_FUNCTIONS[algorithm]
 
-    return algorithm_func(dataset, magnitudes, jds, band, N, make_plots, lims, linear, output)
+    return algorithm_func(
+        dataset, magnitudes, jds, band, N, make_plots, lims, linear, output
+    )
 
 
 def nearest_point(
@@ -239,23 +241,23 @@ def interpolation(
     # Instead of using all data for JDs, use arange over observed min/max
     # 1-hour resolution = 1/24.
     jds_all: NDArray = np.arange(np.min(jds), np.max(jds), 1 / 24.0)
-    
-    if linear: 
+
+    if linear:
         fit = np.interp(jds_all, jds, mags)
-    
+
         tN_indx = np.argmin(np.abs(fit - (mags.min() + N)))
         tN_mag = fit[tN_indx]
         tN_jd = jds_all[tN_indx]
-              
-    else: 
+
+    else:
         fit = UnivariateSpline(jds, mags, k=5, s=len(jds) * 0.1)
-        #fit = UnivariateSpline(jds, mags, k=5)
-        
+        # fit = UnivariateSpline(jds, mags, k=5)
+
         mags_fit = fit(jds_all)
         tN_indx = np.argmin(np.abs(mags_fit - (mags.min() + N)))
         tN_mag = mags_fit[tN_indx]
         tN_jd = jds_all[tN_indx]
-        
+
     cwd = os.getcwd()
 
     if make_plots:
@@ -267,12 +269,14 @@ def interpolation(
             plt_lims = None
 
         viz_dataset(ax, dataset, band, lims=plt_lims)
-    
+
         if linear:
             ax.plot(jds_all, fit, ls="-.", color="r", label="fit results", alpha=0.7)
         else:
-            ax.plot(jds_all, mags_fit, ls="-.", color="r", label="fit results", alpha=0.7)
-            
+            ax.plot(
+                jds_all, mags_fit, ls="-.", color="r", label="fit results", alpha=0.7
+            )
+
         ax.axvline(tN_jd, label="t" + str(N) + " JD", ls="--", color="g")
         ax.axhline(tN_mag, label="t" + str(N) + " mag", ls="--", color="g")
         ax.axvline(np.min(jds), label="max JD", ls="--", color="m")
@@ -289,8 +293,8 @@ def interpolation(
             print("please provide a filename to save your lightcurve")
         else:
             plt.savefig(cwd + "/" + output)
-    
-    if linear: 
+
+    if linear:
         results = TimingData(
             band=band,
             algorithm="interpolation",
@@ -309,7 +313,7 @@ def interpolation(
             N=N,
             tN_mag=tN_mag,
             tN_jd=tN_jd,
-        )        
+        )
     return results
 
 

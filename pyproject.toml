@@ -23,11 +23,15 @@ mypy = "^1.15.0"
 pytest-cov = "^6.0.0"
 pandas-stubs = "^2.2.3.250308"
 
+
+[tool.poetry.group.dev.dependencies]
+autopep8 = "^2.3.2"
+
 [tool.poetry]
 packages = [{include = "nova_times", from = "src"}]
 
 [[tool.mypy.overrides]]
-module = ["astropy.*", "sklearn.*"]
+module = ["astropy.*", "sklearn.*", "scipy.*"]
 ignore_missing_imports = true
 
 [tool.coverage.run]

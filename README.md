@@ -25,13 +25,13 @@ Install `pipx` for your platform using the [instructions here](https://pipx.pypa
 To install the most current development version of this CLI application:
 
 ```
-pipx install git+https://github.com/project-dovetail/nova-times.git
+pipx install git+https://github.com/WolfgangSuperman/nova-times.git
 ```
 
 If you want to force a reinstallation to bring in updates before a new version is published:
 
 ```
-pipx install --force git+https://github.com/project-dovetail/nova-times.git
+pipx install --force git+https://github.com/WolfgangSuperman/nova-times.git
 ```
 
 Test that the installation was successful with this:
@@ -51,7 +51,7 @@ This project was developed using [poetry](https://python-poetry.org/) follow the
 Clone this repo:
 
 ```
-git clone https://github.com/project-dovetail/nova-times.git
+git clone https://github.com/WolfgangSuperman/nova-times.git
 cd nova-times
 ```
 

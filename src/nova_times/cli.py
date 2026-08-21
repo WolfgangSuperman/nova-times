@@ -66,9 +66,31 @@ def viz(
     "algorithm",
     type=click.Choice(list(ALGORITHM_FUNCTIONS.keys())),
 )
-@click.option("-mp", "--plots", "make_plots")
-@click.option("-out", "--output", "output")
-@click.option("-lims", "--limits", "lims")
+@click.option(
+    "-mp",
+    "--plots",
+    "make_plots",
+    is_flag=True,
+    default=False,
+    help="Generate and save plots",
+)
+@click.option("-out", "--output", "output", help="Filename to save plots to")
+@click.option(
+    "-lims",
+    "--limits",
+    "lims",
+    is_flag=True,
+    default=False,
+    help="Set plot x-limits around tN",
+)
+@click.option(
+    "-lin",
+    "--linear",
+    "linear",
+    is_flag=True,
+    default=False,
+    help="Use linear interpolation instead of spline",
+)
 def measure(
     filename: str,
     band: Optional[str] = None,
@@ -76,6 +98,7 @@ def measure(
     N: Optional[float] = None,
     make_plots: Optional[bool] = None,
     lims: Optional[bool] = None,
+    linear: Optional[bool] = None,
     output: Optional[str] = None,
 ) -> None:
     data_table = read_file(filename)
@@ -88,6 +111,7 @@ def measure(
             N=N,
             make_plots=make_plots,
             lims=lims,
+            linear=linear,
             output=output,
         )
     except MissingDataError as err:

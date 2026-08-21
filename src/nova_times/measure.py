@@ -1,4 +1,4 @@
-from typing import Optional, TypedDict
+from typing import Optional, TypedDict, cast
 
 import numpy as np
 from astropy.table import Table
@@ -9,6 +9,8 @@ from nova_times.exceptions import MissingDataError
 import matplotlib.pyplot as plt
 
 from nova_times.viz import viz_dataset
+from scipy.interpolate import UnivariateSpline
+
 
 import os
 
@@ -33,6 +35,7 @@ def measure_time(
     N: Optional[float] = None,
     make_plots: Optional[bool] = None,
     lims: Optional[bool] = None,
+    linear: Optional[bool] = None,
     output: Optional[str] = None,
 ) -> TimingData:
     MINIMUM_NUM_DATA = 10
@@ -46,6 +49,8 @@ def measure_time(
         make_plots = False
     if lims is None:
         lims = False
+    if linear is None:
+        linear = False
 
     mask = dataset.groups.keys["Band"] == band
     singleband_data = dataset.groups[mask]
@@ -59,7 +64,9 @@ def measure_time(
 
     algorithm_func = ALGORITHM_FUNCTIONS[algorithm]
 
-    return algorithm_func(dataset, magnitudes, jds, band, N, make_plots, lims, output)
+    return algorithm_func(
+        dataset, magnitudes, jds, band, N, make_plots, lims, linear, output
+    )
 
 
 def nearest_point(
@@ -70,6 +77,7 @@ def nearest_point(
     N: float,
     make_plots: bool,
     lims: bool,
+    linear: bool,
     output: Optional[str],
 ) -> TimingData:
     """
@@ -136,6 +144,7 @@ def gradient_boosting_regressor(
     N: float,
     make_plots: bool,
     lims: bool,
+    linear: bool,
     output: Optional[str],
 ) -> TimingData:
 
@@ -219,6 +228,7 @@ def interpolation(
     N: float,
     make_plots: bool,
     lims: bool,
+    linear: bool,
     output: Optional[str],
 ) -> TimingData:
 
@@ -234,13 +244,21 @@ def interpolation(
     # 1-hour resolution = 1/24.
     jds_all: NDArray = np.arange(np.min(jds), np.max(jds), 1 / 24.0)
 
-    fit = np.interp(jds_all, jds, mags)
+    if linear:
+        fit = np.interp(jds_all, jds, mags)
 
-    tN_indx = np.argmin(np.abs(fit - (mags.min() + N)))
-    tN_mag = fit[tN_indx]
-    tN_jd = jds_all[tN_indx]
+        tN_indx = np.argmin(np.abs(fit - (mags.min() + N)))
+        tN_mag = fit[tN_indx]
+        tN_jd = jds_all[tN_indx]
 
-    cwd = os.getcwd()
+    else:
+        fit = UnivariateSpline(jds, mags, k=5, s=len(jds) * 0.1)
+        # fit = UnivariateSpline(jds, mags, k=5)
+
+        mags_fit = cast(NDArray, fit(jds_all))
+        tN_indx = np.argmin(np.abs(mags_fit - (mags.min() + N)))
+        tN_mag = mags_fit[tN_indx]
+        tN_jd = jds_all[tN_indx]
 
     if make_plots:
         fig, ax = plt.subplots()
@@ -252,7 +270,13 @@ def interpolation(
 
         viz_dataset(ax, dataset, band, lims=plt_lims)
 
-        ax.plot(jds_all, fit, ls="-.", color="r", label="fit results", alpha=0.7)
+        if linear:
+            ax.plot(jds_all, fit, ls="-.", color="r", label="fit results", alpha=0.7)
+        else:
+            ax.plot(
+                jds_all, mags_fit, ls="-.", color="r", label="fit results", alpha=0.7
+            )
+
         ax.axvline(tN_jd, label="t" + str(N) + " JD", ls="--", color="g")
         ax.axhline(tN_mag, label="t" + str(N) + " mag", ls="--", color="g")
         ax.axvline(np.min(jds), label="max JD", ls="--", color="m")
@@ -270,16 +294,26 @@ def interpolation(
         else:
             plt.savefig(cwd + "/" + output)
 
-    results = TimingData(
-        band=band,
-        algorithm="interpolation",
-        maximum_jd=np.min(jds),
-        maximum_mag=maximum_mag,
-        N=N,
-        tN_mag=tN_mag,
-        tN_jd=tN_jd,
-    )
-
+    if linear:
+        results = TimingData(
+            band=band,
+            algorithm="interpolation",
+            maximum_jd=np.min(jds),
+            maximum_mag=maximum_mag,
+            N=N,
+            tN_mag=tN_mag,
+            tN_jd=tN_jd,
+        )
+    else:
+        results = TimingData(
+            band=band,
+            algorithm="interpolation, spline (k = 5)",
+            maximum_jd=np.min(jds),
+            maximum_mag=maximum_mag,
+            N=N,
+            tN_mag=tN_mag,
+            tN_jd=tN_jd,
+        )
     return results
 
 
